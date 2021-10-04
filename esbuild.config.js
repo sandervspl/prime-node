@@ -17,7 +17,7 @@ async function bootstrap() {
     outdir: 'dist/config',
   });
 
-  const { dev } = require('./dist/config/env');
+  const { dev, prod } = require('./dist/config/env');
   const { globals } = require('./dist/config/globals');
 
   let nodeFork;
@@ -34,6 +34,8 @@ async function bootstrap() {
       ...globals,
     },
     target: 'es2018',
+    // We can mark all non-dev dependencies as external as they will be installed on the server
+    // with npm install, so all imports in the code still work.
     external: Object.keys(pkg.dependencies),
     watch: dev && {
       onRebuild(err) {
@@ -55,12 +57,18 @@ async function bootstrap() {
     },
   });
 
-  nodeFork = fork('dist/main.js');
+  if (dev) {
+    nodeFork = fork('dist/main.js');
+  }
 
   notify({
     title: process.env.npm_package_name,
     message: 'Build complete',
   });
+
+  if (prod) {
+    process.exit();
+  }
 }
 
 bootstrap();
